@@ -1,7 +1,7 @@
 ---
 - name: Activate postgres container
   docker_container:
-    name: postgres
+    name:  "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}postgres"
     state: started
     restart_policy: unless-stopped
     image: "{{ postgresql_image }}"
@@ -17,7 +17,7 @@
 
 - name: Activate rabbitmq container
   docker_container:
-    name: rabbitmq
+    name: "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}rabbitmq"
     state: started
     restart_policy: unless-stopped
     image: "{{ rabbitmq_image }}"
@@ -30,7 +30,7 @@
 
 - name: Activate memcached container
   docker_container:
-    name: memcached
+    name: "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}memcached"
     state: started
     restart_policy: unless-stopped
     image: memcached:alpine
@@ -44,41 +44,41 @@
   set_fact:
     pg_hostname_actual: "{{ pg_hostname }}"
     awx_web_container_links:
-      - rabbitmq
-      - memcached
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}rabbitmq"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}memcached"
   when: pg_hostname is defined
 
 - name: Set properties with postgres for awx_web
   set_fact:
     pg_hostname_actual: postgres
     awx_web_container_links:
-      - rabbitmq
-      - memcached
-      - postgres
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}rabbitmq"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}memcached"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}postgres"
   when: pg_hostname is not defined or pg_hostname == ''
 
 - name: Set properties without postgres for awx_task
   set_fact:
     pg_hostname_actual: "{{ pg_hostname }}"
     awx_task_container_links:
-      - rabbitmq
-      - memcached
-      - awx_web:awxweb
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}rabbitmq"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}memcached"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}web:awxweb"
   when: pg_hostname is defined
 
 - name: Set properties with postgres for awx_task
   set_fact:
     pg_hostname_actual: postgres
     awx_task_container_links:
-      - rabbitmq
-      - memcached
-      - awx_web:awxweb
-      - postgres
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}rabbitmq"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}memcached"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}web:awxweb"
+      - "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% endif %}postgres"
   when: pg_hostname is not defined or pg_hostname == ''
 
 - name: Activate AWX Web Container
   docker_container:
-    name: awx_web
+    name: "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}web"
     state: started
     restart_policy: unless-stopped
     image: "{{ awx_web_docker_actual_image }}"
@@ -117,12 +117,12 @@
   register: awx_web_container
 
 - name: Update CA trust in awx_web container
-  command: docker exec awx_web '/usr/bin/update-ca-trust'
+  command: "docker exec {% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}web '/usr/bin/update-ca-trust'"
   when: awx_web_container.changed
 
 - name: Activate AWX Task Container
   docker_container:
-    name: awx_task
+    name: "{% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}task"
     state: started
     restart_policy: unless-stopped
     image: "{{ awx_task_docker_actual_image }}"
@@ -159,5 +159,5 @@
   register: awx_task_container
 
 - name: Update CA trust in awx_task container
-  command: docker exec awx_task '/usr/bin/update-ca-trust'
+  command: "docker exec {% if docker_container_name_prefix is defined and docker_container_name_prefix %}{{ docker_container_name_prefix }}_{% else %}awx_{% endif %}task '/usr/bin/update-ca-trust'"
   when: awx_task_container.changed
